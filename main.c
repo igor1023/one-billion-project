@@ -1,137 +1,88 @@
 #include <stdio.h>
-// para usar a libprg, inclua librpg/libprg.h
+#include <stdlib.h>
+#include <string.h>
 #include <libprg/libprg.h>
-#include<stdlib.h>
+#include <time.h>
+#include "dado_estacao.h"
 
-typedef struct {
-
-  char * estacao;
-  double min;
-  double med;
-  double max;
-  int ocorrencia;
-
-} Dados_temp_t;
-
-#define MAX_ESTACAO 100
-
-//Retorna o indice que contem a estacao ou -1 se não existe
-int pos_vetor_dados_temp(Dados_temp_t ** dados, char * estacao) {
-
-  int i = 0;
-  while (dados[i] != NULL) {
-
-    if (! strcmp(dados[i]->estacao, estacao))
-      return i;
-
-    i++;
-  }
-
-  return -1;
-}
+#define MAX_LINHA 100
 
 int main() {
-  // comece aqui seu programa
 
-  FILE * arq = fopen("measurements_light.txt", "r");
-
-  if (arq == NULL) {
-    perror(" ao abrir arquivo\n");
-    return 1;
-  }
-
-  thash_t * tabela = thash_cria(gconf_string());
-
-  if (tabela == NULL) {
-    perror(" ao criar tabela\n");
-    return 2;
-  }
-
-  Dados_temp_t ** dados = malloc(MAX_ESTACAO * sizeof(Dados_temp_t *));
-  if (dados == NULL) {
-    perror(" no sistema\n");
-    return 3;
-  }
-
-  for (int j = 0; j < MAX_ESTACAO; j++) {
-
-    dados[j] = malloc(sizeof(Dados_temp_t));
-    if (dados[j] == NULL)
-      return 4;
-
-    dados[j]->min = 1000.0;
-    dados[j]->med = 0.0;
-    dados[j]->max = -1000.0;
-    dados[j]->ocorrencia = 0;
-
-  }
-  int i = 0;
-  char estacao[50];
-  double temperatura;
-
-  while (fscanf(arq, "%49[^;]%lf", estacao, &temperatura) != EOF) {
-
-    if (thash_existe(tabela, estacao)) {
-
-      const int pos = pos_vetor_dados_temp(dados, estacao);
-      if (temperatura < dados[pos]->min)
-        dados[pos]->min = temperatura;
-
-      if (temperatura > dados[pos]->max)
-        dados[pos]->max = temperatura;
-
-      dados[pos]->med += temperatura;
-      dados[pos]->ocorrencia++;
-
-      //converter os valores de temperatura DOUBLE para STRING
-      char temp_min[10], temp_max[10], temp_med[10];
-      char temp_str[15]; //será o valor a ser atualizado na tabela
-
-      sprintf(temp_min, "%.1f;", dados[pos]->min);
-      sprintf(temp_med, "%.1f;", dados[pos]->med / dados[pos]->ocorrencia);
-      sprintf(temp_max, "%.1f", dados[pos]->max);
-
-      strcpy(temp_str, temp_min);
-      strcat(temp_str, temp_med);
-      strcat(temp_str, temp_max);
-
-      thash_adiciona(tabela, estacao, temp_str);
+    FILE *arq = fopen("measurements_light.txt", "r");
+    if (arq == NULL) {
+        perror(" Ao abrir arquivo");
+        return EXIT_FAILURE;
     }
 
-    else {
+    thash_t * tabela = thash_cria(gconf_dados_estacao());
 
-      dados[i]->estacao = strdup(estacao);
-      if (temperatura < dados[i]->min)
-        dados[i]->min = temperatura;
-
-      if (temperatura > dados[i]->min)
-        dados[i]->max = temperatura;
-
-      dados[i]->med += temperatura;
-      dados[i]->ocorrencia = 1;
+    if (tabela == NULL) {
+        perror(" Ao criar tabela hash");
+        fclose(arq);
+        thash_destroi(tabela);
+        return EXIT_FAILURE;
     }
 
-  }
+    char linha[MAX_LINHA];
+    const long int i = time(NULL); //para cronometrar o tempo de operacao do programa
 
-  fclose(arq);
+    while (fgets(linha, MAX_LINHA, arq)) {
 
-  thash_inicia_iteracao(tabela);
-  par_t * par;
+        linha[strcspn(linha, "\n")] = '\0';  // Remover o '\n' do final da linha
 
-  while ((par = thash_proximo(tabela)) != NULL) {
+        char * separador = strchr(linha, ';');
+        char * nome_estacao = linha;
+        const char * temperatura_str = separador + 1; //";NUMERO" => vai apontar somente para "NUMERO"
 
-    char * chave = par->chave;
-    char * valor = par->valor;
+        //neste momento, tenho a estacao guardada em NOME_ESTACAO e a temperatura em TEMPERATURA
+        //agora, tenho que converter a temperatura de STRING para DOUBLE
 
-    printf("> %s = %s\n", chave, valor);
+        const double temperatura_do = strtod(temperatura_str, NULL);
 
-  }
+        //sabendo que thash_obtem retorna:
+        // 1) o valor, se a chave existe
+        // 2) ou NULL, caso contrario
+        //Não vou utilizar a funcao thash_existe...
 
-  for (int j = 0; j < MAX_ESTACAO; j++) {
-    free(dados[j]);
-  }
-  free(dados);
-  thash_destroi(tabela);
+        dados_estacao_t * dados = thash_obtem(tabela, nome_estacao);
+        if (dados != NULL) {
 
-  return 0;
+            //se já existe, atualizo os dados da estacao
+            if (dados->max < temperatura_do)
+                dados->max = temperatura_do;
+            if (dados->min > temperatura_do)
+                dados->min = temperatura_do;
+
+            dados->med += temperatura_do;
+            dados->ocorrencia++;
+
+        }
+
+        else {
+
+            //se não existe, adiciona na tabela e seto ocorrencias como 1
+            dados = malloc(sizeof(dados_estacao_t));
+            if (dados == NULL) {
+                perror(" ao alocar memoria");
+                fclose(arq);
+                thash_destroi(tabela);
+                return EXIT_FAILURE;
+            }
+
+            dados->min = dados->med = dados->max = temperatura_do;
+            dados->ocorrencia = 1;
+            thash_adiciona(tabela, nome_estacao, &dados);
+
+        }
+
+    }
+
+    fclose(arq);
+    thash_destroi(tabela);
+
+    const long int f = time(NULL); //marca o fim do cronometro
+    printf("sai do loop: %ld\n", f - i);
+
+    return EXIT_SUCCESS;
 }
