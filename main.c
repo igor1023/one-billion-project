@@ -26,26 +26,32 @@ int main() {
 
     char linha[MAX_LINHA];
     const long int i = time(NULL); //para cronometrar o tempo de operacao do programa
+    char * separador;
+    char * estacao;
+    char * temperatura_str;
+    double temperatura_do;
 
     while (fgets(linha, MAX_LINHA, arq)) {
 
         linha[strcspn(linha, "\n")] = '\0';  // Remover o '\n' do final da linha
 
-        char * separador = strchr(linha, ';');
-        char * nome_estacao = linha;
-        const char * temperatura_str = separador + 1; //";NUMERO" => vai apontar somente para "NUMERO"
+        separador = strchr(linha, ';');
+        estacao = linha;
+        temperatura_str = separador + 1; //";NUMERO" => vai apontar somente para "NUMERO"
 
         //neste momento, tenho a estacao guardada em NOME_ESTACAO e a temperatura em TEMPERATURA
         //agora, tenho que converter a temperatura de STRING para DOUBLE
 
-        const double temperatura_do = strtod(temperatura_str, NULL);
+        temperatura_do = strtod(temperatura_str, NULL);
 
         //sabendo que thash_obtem retorna:
         // 1) o valor, se a chave existe
         // 2) ou NULL, caso contrario
         //Não vou utilizar a funcao thash_existe...
 
-        dados_estacao_t * dados = thash_obtem(tabela, nome_estacao);
+        dados_estacao_t * dados = malloc(sizeof(dados_estacao_t));
+        if (dados == NULL)
+        dados = thash_obtem(tabela, estacao);
         if (dados != NULL) {
 
             //se já existe, atualizo os dados da estacao
@@ -72,9 +78,10 @@ int main() {
 
             dados->min = dados->med = dados->max = temperatura_do;
             dados->ocorrencia = 1;
-            thash_adiciona(tabela, nome_estacao, &dados);
 
         }
+
+        thash_adiciona(tabela, estacao, &dados);
 
     }
 
