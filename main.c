@@ -45,11 +45,10 @@ double string_2_double(const char * temp_str) {
             //depois o factor passa a ser 0.01
             //para o '2': converteríamos o '2' para decimal (2) e multiplicamos por fator (0.01)
             //sempre somamos este cálulo no resultado (na parte fracionaria do resultado)
-            fator /= 10;
+            fator /= 10.0;
             i++;
         }
     }
-
     return sinal * resultado;
 }
 
@@ -83,9 +82,6 @@ int main() {
 
     unsigned int len;
     char * separador, * temperatura_str;
-    const long int i = time(NULL);
-
-    //char * endptr;
     double temperatura_do;
 
     while (fgets(linha, MAX_LINHA, arq)) {
@@ -102,13 +98,8 @@ int main() {
         //agora, tenho que converter a temperatura de STRING para DOUBLE
 
         temperatura_do = string_2_double(temperatura_str);
-        // temperatura_do = strtod(temperatura_str, &endptr);
-        //  if (*endptr != '\0') {
-        //      printf("problema com conversao => %s\n", estacao);
-        //      continue;
-        //  }
 
-        //sabendo que thash_obtem retorna:
+        // sabendo que thash_obtem retorna:
         // 1) o valor, se a chave existe
         // 2) ou NULL, caso contrario
         // Não vou utilizar a funcao thash_existe...
@@ -116,7 +107,6 @@ int main() {
 
         dados_estacao_t * ptr_dados = thash_obtem(tabela, estacao);
         if (ptr_dados != NULL) {
-
             //se já existe, atualizo os dados da estacao
             if (ptr_dados->max < temperatura_do)
                 ptr_dados->max = temperatura_do;
@@ -125,30 +115,25 @@ int main() {
 
             ptr_dados->med += temperatura_do;
             ptr_dados->ocorrencia++;
-
         }
 
         else {
-
             //se não existe, adiciona na tabela e seto ocorrencias como 1
             dados_estacao_t novos_dados = {temperatura_do, temperatura_do, temperatura_do, 1};
 
+            // a declaração acima é o mesmo que
             // novos_dados.min = novos_dados.med = novos_dados.max = temperatura_do;
             // novos_dados.ocorrencia = 1;
 
             thash_adiciona(tabela, estacao, &novos_dados);
-
         }
     }
 
     free(linha);
     free(estacao);
     fclose(arq);
-    const int len_tab = thash_tamanho(tabela);
-    printf("tamanho: %d\n", len_tab);
 
-    const long int f = time(NULL);
-    printf("%ld segundos\n", f - i);
+    puts("Tecle ENTER para imprimir as estações");
     getchar();
 
     //agora vou imprimir
