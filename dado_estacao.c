@@ -1,9 +1,10 @@
 //
-// Created by Igor on 24/02/25.
+// Created by alunos do projeto on 24/02/25.
 //
 
 #include"dado_estacao.h"
 
+// > Desenvolvimento das funções criadas pelo Professor.
 dados_estacao_t * dados_clone(dados_estacao_t * original) {
     g_alloc(novo, dados_estacao_t);
     *novo = * original;
