@@ -8,13 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libprg/libprg.h>
-#include <time.h>
 #include "dado_estacao.h"
 
 #define MAX_LINHA 61
 #define MAX_ESTACAO 51
 
-//função para converter string para double
+// > Função para converter string para double (implementada pela equipe)
 double string_2_double(const char * temp_str) {
 
     double resultado = 0.0;
@@ -24,7 +23,7 @@ double string_2_double(const char * temp_str) {
     // > Vamos verificar se o numero é negativo.
     if (temp_str[i] == '-') {
         sinal = -1;
-        i++; // Avança para o proximo caractere
+        i++; // > Avança para o proximo caractere
     }
 
     // > Vamos verificar a parte inteira do numero
@@ -58,18 +57,23 @@ double string_2_double(const char * temp_str) {
     return sinal * resultado;
 }
 
-int main() {
+int main(int argc, char * argv[]) {
 
-    FILE *arq = fopen("measurements.txt", "r");
+    if (argc < 2) {
+        perror("Execute desta forma: ./modelo <nome_do_arquivo>");
+        return EXIT_FAILURE;
+    }
+
+    FILE *arq = fopen(argv[1], "r");
     if (arq == NULL) {
-        perror(" Ao abrir arquivo");
+        perror("Erro ao abrir arquivo");
         return EXIT_FAILURE;
     }
 
     thash_t * tabela = thash_cria(gconf_dados_estacao());
 
     if (tabela == NULL) {
-        perror(" Ao criar tabela hash");
+        perror("Erro ao criar tabela hash");
         fclose(arq);
         return EXIT_FAILURE;
     }
@@ -83,7 +87,7 @@ int main() {
     // > Alocar memoria para linha e estacao apresentou mais rapidez
     // do que utilizá-las como strings (EX: char linha[MAX];)+
     if (estacao == NULL || linha == NULL) {
-        perror(" Ao alocar string");
+        perror("Erro ao alocar string");
         fclose(arq);
         thash_destroi(tabela);
         return EXIT_FAILURE;
@@ -92,6 +96,8 @@ int main() {
     unsigned int len;
     char * separador, * temperatura_str;
     double temperatura_do;
+
+    puts("Lendo arquivo e processando dados. Aguarde...");
 
     while (fgets(linha, MAX_LINHA, arq)) {
 
@@ -143,7 +149,7 @@ int main() {
     free(estacao);
     fclose(arq);
 
-    puts("Tecle ENTER para imprimir as estações");
+    puts("Fim da leitura e processamento. Tecle ENTER para imprimir as estações");
     getchar();
 
     // > Agora vamos imprimir
