@@ -27,4 +27,4 @@ nome da estação meteorológica=menor/média/maior
 
 ... sendo menor, média e maior, respectivamente, a menor temperatura, a temperatura média, e a maior temperatura naquela estação meteorológica.
 A referência para a implementação do aluno proposta pelo Professor deve ser um tempo de 100 segundos.
-Obs.: armazenou-se as informações em uma tabela hash, desenvolvida pelo professor, conforme proposta do docente da disciplina neste projeto.
+Obs.: armazenaram-se tais informações em uma tabela hash, desenvolvida pelo professor, conforme proposta do docente da disciplina neste projeto.
